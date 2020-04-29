@@ -33,16 +33,14 @@ bool intersect(ray_t ray, sphere_t sphere);
 int main()
 {
     /** parameter definition */
-    // todo only works for square pixels for now
-    //  https://en.wikipedia.org/wiki/Ray_tracing_(graphics)
-    const uint32_t K = 800;         // number of pixels in horizontal direction
-    const uint32_t M = 800;         // number of pixels in vertical direction
-    const vec3f E = {0, 1.f, 0};    // eye
-    const vec3f T = {0, 1.f, 1.f};  // target
-    const vec3f W = {0, 1.f, 0};    // up-vector
-    const float THETA = M_PI / 2.f; // field of view
-
-    const sphere_t LAMP = {.c={0, 1.f, 20.f}, .r=4.f};
+    // https://en.wikipedia.org/wiki/Ray_tracing_(graphics)
+    const uint32_t K = 800;          // number of pixels in horizontal direction
+    const uint32_t M = 600;          // number of pixels in vertical direction
+    const vec3f E = {0.f, 1.f, 0.f}; // eye
+    const vec3f T = {0.f, 1.f, 1.f}; // target
+    const vec3f W = {0.f, 1.f, 0.f}; // up-vector
+    const float THETA = M_PI / 2.f;  // field of view
+    const sphere_t LAMP = {.c={0.f, 1.f, 21.f}, .r=4.f};
 
     /** pre-calculation */
     vec3f t = vec3f_sub(T, E);   // look direction
@@ -51,27 +49,27 @@ int main()
     b = vec3f_norm(b);
     vec3f v = vec3f_cross(t, b);
 
-    float gx = tanf(THETA / 2.f); // (half) viewport size in horizontal dimension
-    float gy = (gx * M) / K;      // (half) viewport size in vertical dimension
-
-    vec3f qx = vec3f_scale(b, (2 * gx) / ((float) K - 1));
-    vec3f qy = vec3f_scale(v, (2 * gy) / ((float) M - 1));
+    float gx = tanf(THETA / 2.f);    // (half) viewport size in horizontal dimension
+    float gy = (gx * M) / (float) K; // (half) viewport size in vertical dimension
 
     vec3f p1m = vec3f_sub(vec3f_sub(t, vec3f_scale(b, gx)), vec3f_scale(v, gy));
+
+    vec3f qx = vec3f_scale(b, (2.f * gx) / (K - 1.f));
+    vec3f qy = vec3f_scale(v, (2.f * gy) / (M - 1.f));
 
     /** allocate memory */
     color_t *buffer = malloc(M * K * sizeof(color_t));
 
     /** begin tracing */
-    for (uint32_t i = 1; i <= K; i++) {
-        for (uint32_t j = 1; j <= M; j++) {
+    for (uint32_t j = 0; j < M; j++) {
+        for (uint32_t i = 0; i < K; i++) {
             vec3f rij = vec3f_norm(vec3f_add(p1m, vec3f_add(
-                    vec3f_scale(qx, (float) i - 1),
-                    vec3f_scale(qy, (float) j - 1)
+                    vec3f_scale(qx, i),
+                    vec3f_scale(qy, j)
             )));
             ray_t ray = {.s=E, .d=rij};
 
-            color_t *pixel = &buffer[(i - 1) * M + (j - 1)];
+            color_t *pixel = &buffer[j * K + i];
             if (intersect(ray, LAMP)) {
                 memcpy(pixel, &LIGHT, sizeof(color_t));
             } else {
