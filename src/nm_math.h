@@ -2,6 +2,7 @@
 #define RAY_TRACE_NM_MATH_H
 
 #include <math.h>
+#include <stdbool.h>
 
 typedef struct {
     float x;
@@ -31,5 +32,8 @@ vec3f vec3f_norm(vec3f a);
 
 /** returns a scaled by k */
 vec3f vec3f_scale(vec3f a, float k);
+
+/** returns true if a and b are equal */
+bool vec3f_eq(vec3f a, vec3f b);
 
 #endif //RAY_TRACE_NM_MATH_H

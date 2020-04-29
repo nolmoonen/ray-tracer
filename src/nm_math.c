@@ -55,3 +55,8 @@ vec3f vec3f_scale(vec3f a, float k)
 
     return result;
 }
+
+bool vec3f_eq(vec3f a, vec3f b)
+{
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
