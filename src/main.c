@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
+#include <float.h>
 #include "nm_math.h"
 
 typedef struct {
@@ -53,24 +54,27 @@ float compute_lighting(ray_t origin, ray_t reflected, float shininess);
 /**
  * returns whether {origin} intersects with a ball in BALLS, if so:
  * {ball} contains the closest ball, {reflected} contains the ray bouncing off that ball */
-bool get_closest_ball(ray_t *reflected, ball_t *ball, ray_t origin);
+bool get_closest_ball(ray_t *reflected, ball_t *ball, ray_t origin, float t_min, float t_max);
 
 /** scene definition */
-#define POINT_LIGHT_POS {-11.f, 1.f, 15.f}
+#define POINT_LIGHT_POS {14.f, 9.f, 10.f}
 
 const light_t LIGHTS[] = {
-        {.type=LIGHT_AMBIENT,     .intensity=.2f},
-        {.type=LIGHT_POINT,       .intensity=.6f, .vec.direction=POINT_LIGHT_POS},
-        {.type=LIGHT_DIRECTIONAL, .intensity=.2f, .vec.location={1.f, 4.f, 4.f}}
+        {.type=LIGHT_AMBIENT, .intensity=.2f},
+        {.type=LIGHT_POINT, .intensity=.6f, .vec.location=POINT_LIGHT_POS},
+        {.type=LIGHT_DIRECTIONAL, .intensity=.2f, .vec.direction={1.f, 4.f, 4.f}}
 };
 
 const ball_t BALLS[] = {
-        {.sphere={.c={-9.f, 1.f, 30.f}, .r=4.f}, .color={1.f, 0.f, 0.f}, .shininess=10.f},  // red
-        {.sphere={.c={-3.f, 1.f, 26.f}, .r=4.f}, .color={0.f, 1.f, 0.f}, .shininess=100.f}, // green
-        {.sphere={.c={+3.f, 1.f, 22.f}, .r=4.f}, .color={0.f, 0.f, 1.f}, .shininess=500.f}, // blue
+        // couple of same sized balls
+        {.sphere={.c={-9.f, 1.f, 30.f}, .r=4.f}, .color={1.f, 0.f, 0.f}, .shininess=10.f},   // red
+        {.sphere={.c={-3.f, 1.f, 26.f}, .r=4.f}, .color={0.f, 1.f, 0.f}, .shininess=100.f},  // green
+        {.sphere={.c={+3.f, 1.f, 22.f}, .r=4.f}, .color={0.f, 0.f, 1.f}, .shininess=500.f},  // blue
         {.sphere={.c={+9.f, 1.f, 18.f}, .r=4.f}, .color={1.f, 1.f, 0.f}, .shininess=1000.f}, // yellow
-        // render a ball in the location of a light, for debugging purposes
-        {.sphere={.c=POINT_LIGHT_POS,   .r=1.f}, .color={1.f, 1.f, 1.f}, .shininess=0.f}
+        // a large ball that serves as a surface
+        {.sphere={.c={0.f, -50002.5f, 24.f}, .r=50000.f}, .color={.9f, .9f, .9f}, .shininess=0.f},
+        // DEBUG: render a ball in the location of a light
+//        {.sphere={.c=POINT_LIGHT_POS, .r=1.f}, .color={1.f, 1.f, 1.f}, .shininess=0.f}
 };
 
 int main()
@@ -111,11 +115,11 @@ int main()
 
             ray_t reflection;
             ball_t closest_ball;
-            if (get_closest_ball(&reflection, &closest_ball, ray)) {
+            if (get_closest_ball(&reflection, &closest_ball, ray, 0.f, FLT_MAX)) {
                 color = vec3f_scale(closest_ball.color, compute_lighting(ray, reflection, closest_ball.shininess));
                 // todo bounce {reflection} again to more objects
             } else {
-                const vec3f BACKGROUND = {.33f, .33f, .33f};
+                const vec3f BACKGROUND = {.1f, .1f, .1f};
                 color = BACKGROUND;
             }
 
@@ -187,14 +191,25 @@ float compute_lighting(ray_t origin, ray_t reflected, float shininess)
         }
 
         vec3f l; // direction to the light
+        float t_max = FLT_MAX;
         if (light->type == LIGHT_POINT) {
             l = vec3f_sub(light->vec.location, reflected.start);
+            t_max = 1.f; // prevent creating shadows beyond the light source
         } else { // if (light->type == LIGHT_DIRECTION)
-            l = vec3f_scale(light->vec.direction, -1.f);
+            l = light->vec.direction;
         }
 
         vec3f n = vec3f_norm(reflected.direction); // surface normal
         l = vec3f_norm(l);
+
+        ray_t r;
+        ball_t b;
+        ray_t intersection_to_light = {reflected.start, l};
+        float t_min = 0.005f; // prevent casting shadow on itself
+        if (get_closest_ball(&r, &b, intersection_to_light, t_min, t_max)) {
+            // if a ball is in between intersection and light, this is a shadow
+            continue;
+        }
 
         // diffuse
         float ln = vec3f_dot(l, n);
@@ -218,7 +233,7 @@ float compute_lighting(ray_t origin, ray_t reflected, float shininess)
     return intensity;
 }
 
-bool get_closest_ball(ray_t *reflected, ball_t *ball, ray_t origin)
+bool get_closest_ball(ray_t *reflected, ball_t *ball, ray_t origin, float t_min, float t_max)
 {
     float t_smallest;
     bool found_one = false;
@@ -226,7 +241,7 @@ bool get_closest_ball(ray_t *reflected, ball_t *ball, ray_t origin)
         float t;
         ray_t reflection;
         if (reflect(&reflection, &t, origin, BALLS[i].sphere)) {
-            if (!found_one || t < t_smallest) {
+            if ((!found_one && t >= t_min && t <= t_max) || (t < t_smallest && t >= t_min && t <= t_max)) {
                 t_smallest = t;
                 found_one = true;
 
