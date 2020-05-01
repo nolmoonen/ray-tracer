@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ray_trace C)
+project(ray_tracer C)
 
 set(CMAKE_C_STANDARD 99)
 
