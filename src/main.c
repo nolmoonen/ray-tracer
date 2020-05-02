@@ -17,6 +17,7 @@ typedef struct {
     sphere_t sphere;
     vec3f color;
     float shininess;
+    float reflectiveness;
 } ball_t;
 
 // only use to write to file
@@ -56,6 +57,9 @@ float compute_lighting(ray_t origin, ray_t reflected, float shininess);
  * {ball} contains the closest ball, {reflected} contains the ray bouncing off that ball */
 bool get_closest_ball(ray_t *reflected, ball_t *ball, ray_t origin, float t_min, float t_max);
 
+/** returns the color of a ray */
+vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max);
+
 /** scene definition */
 #define POINT_LIGHT_POS {14.f, 9.f, 10.f}
 
@@ -67,15 +71,21 @@ const light_t LIGHTS[] = {
 
 const ball_t BALLS[] = {
         // couple of same sized balls
-        {.sphere={.c={-9.f, 1.f, 30.f}, .r=4.f}, .color={1.f, 0.f, 0.f}, .shininess=10.f},   // red
-        {.sphere={.c={-3.f, 1.f, 26.f}, .r=4.f}, .color={0.f, 1.f, 0.f}, .shininess=100.f},  // green
-        {.sphere={.c={+3.f, 1.f, 22.f}, .r=4.f}, .color={0.f, 0.f, 1.f}, .shininess=500.f},  // blue
-        {.sphere={.c={+9.f, 1.f, 18.f}, .r=4.f}, .color={1.f, 1.f, 0.f}, .shininess=1000.f}, // yellow
+        {.sphere={.c={-9.f, 1.f, 30.f}, .r=4.f}, .color={1.f, 0.f, 0.f},
+                .shininess=10.f, .reflectiveness=.2f},   // red
+        {.sphere={.c={-3.f, 1.f, 26.f}, .r=4.f}, .color={0.f, 1.f, 0.f},
+                .shininess=100.f, .reflectiveness=.3f},  // green
+        {.sphere={.c={+3.f, 1.f, 22.f}, .r=4.f}, .color={0.f, 0.f, 1.f},
+                .shininess=500.f, .reflectiveness=.4f},  // blue
+        {.sphere={.c={+9.f, 1.f, 18.f}, .r=4.f}, .color={1.f, 1.f, 0.f},
+                .shininess=1000.f, .reflectiveness=.5f}, // yellow
         // a large ball that serves as a surface
         {.sphere={.c={0.f, -50002.5f, 24.f}, .r=50000.f}, .color={.9f, .9f, .9f}, .shininess=0.f},
         // DEBUG: render a ball in the location of a light
 //        {.sphere={.c=POINT_LIGHT_POS, .r=1.f}, .color={1.f, 1.f, 1.f}, .shininess=0.f}
 };
+
+const float T_CLOSE = 0.005f; // near clipping plane to prevent from casting shadows and reflections on self
 
 int main()
 {
@@ -87,6 +97,9 @@ int main()
     const vec3f T = {0.f, 1.f, 1.f}; // target
     const vec3f W = {0.f, 1.f, 0.f}; // up-vector
     const float THETA = M_PI / 2.f;  // field of view
+    const uint32_t DEPTH = 3;
+    const float T_MIN = 0.f;
+    const float T_MAX = FLT_MAX;
 
     /** pre-calculation */
     vec3f t = vec3f_sub(T, E);   // look direction
@@ -111,17 +124,8 @@ int main()
         for (uint32_t i = 0; i < K; i++) {
             vec3f rij = vec3f_norm(vec3f_sub(vec3f_add(p11, vec3f_scale(qx, i)), vec3f_scale(qy, j)));
             ray_t ray = {.start=E, .direction=rij};
-            vec3f color;
 
-            ray_t reflection;
-            ball_t closest_ball;
-            if (get_closest_ball(&reflection, &closest_ball, ray, 0.f, FLT_MAX)) {
-                color = vec3f_scale(closest_ball.color, compute_lighting(ray, reflection, closest_ball.shininess));
-                // todo bounce {reflection} again to more objects
-            } else {
-                const vec3f BACKGROUND = {.1f, .1f, .1f};
-                color = BACKGROUND;
-            }
+            vec3f color = trace_ray(ray, DEPTH, T_MIN, T_MAX);
 
             // apply pixel
             color_t colorRGB = {
@@ -205,8 +209,8 @@ float compute_lighting(ray_t origin, ray_t reflected, float shininess)
         ray_t r;
         ball_t b;
         ray_t intersection_to_light = {reflected.start, l};
-        float t_min = 0.005f; // prevent casting shadow on itself
-        if (get_closest_ball(&r, &b, intersection_to_light, t_min, t_max)) {
+        // prevent casting shadow on itself
+        if (get_closest_ball(&r, &b, intersection_to_light, T_CLOSE, t_max)) {
             // if a ball is in between intersection and light, this is a shadow
             continue;
         }
@@ -252,4 +256,35 @@ bool get_closest_ball(ray_t *reflected, ball_t *ball, ray_t origin, float t_min,
     }
 
     return found_one;
+}
+
+vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max)
+{
+    ray_t reflection;
+    ball_t closest_ball;
+    bool intersect = get_closest_ball(&reflection, &closest_ball, ray, t_min, t_max);
+
+    if (!intersect) {
+        const vec3f BACKGROUND = {.1f, .1f, .1f};
+        return BACKGROUND;
+    }
+
+    // get the color of the first intersection
+    vec3f color = vec3f_scale(closest_ball.color, compute_lighting(ray, reflection, closest_ball.shininess));
+    // todo bounce {reflection} again to more objects
+
+    // if not reflective, or max depth is reached, do not
+    if (closest_ball.reflectiveness <= 0 || depth == 0) {
+        return color;
+    }
+
+    // reflect ray
+    vec3f reflected_color = trace_ray(reflection, depth - 1, T_CLOSE, t_max);
+
+    vec3f total_color = vec3f_add(
+            vec3f_scale(color, 1.f - closest_ball.reflectiveness),
+            vec3f_scale(reflected_color, closest_ball.reflectiveness)
+    );
+
+    return total_color;
 }

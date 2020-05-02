@@ -1,6 +1,6 @@
 ![splash](images/splash.png)
 
-An exercise into ray tracing, having Blinn-Phong shading and shadows.
+An exercise into ray tracing, having Blinn-Phong shading, shadows, and reflections.
 #### Building
 * Clone [stb](https://github.com/nothings/stb) into directory `external/stb`.
 * Build using CMake.
