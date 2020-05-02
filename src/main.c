@@ -105,7 +105,7 @@ const ball_t BALLS[] = {
         // yellow ball
         {
                 .sphere={.center={+9.f, 1.f, 18.f}, .radius=4.f}, .color = {1.f, 1.f, 0.f}, .shininess = 1000.f,
-                .reflection={.type=REFRACTIVE, .fraction.refractiveness=.9f, .refractive_index=1.5f}
+                .reflection={.type=REFLECTIVE_REFRACTIVE, .refractive_index=1.5f}
         },
 //        // pink ball
 //        {
@@ -306,73 +306,100 @@ vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max)
 
     // normal outwards from the sphere center
     vec3f normal = vec3f_norm(vec3f_sub(reflection.start, closest_ball.sphere.center));
-    // get the color of the intersection with the closest ball
     float intensity = compute_lighting(ray, normal, reflection, closest_ball.shininess);
-    vec3f color = vec3f_scale(closest_ball.color, intensity);
+    // the color of the closest ball the ray hits
+    vec3f color_intersection = vec3f_scale(closest_ball.color, intensity);
 
     if (depth == 0) {
         // if max depth is reached, do not reflect or refract ray
-        return color;
+        return color_intersection;
     }
 
-    // handle reflection and refraction
+    /** compute reflective color */
+    vec3f reflected_color;
+    if (closest_ball.reflection.type == REFLECTIVE || closest_ball.reflection.type == REFLECTIVE_REFRACTIVE) {
+        // recursive call
+        reflected_color = trace_ray(reflection, depth - 1, T_CLOSE, t_max);
+    }
+
+    /** common code for REFRACTIVE and REFLECTIVE_REFRACTIVE */
+    float cos_i = vec3f_dot(normal, ray.direction); // cosine of angle of incidence
+    float eta_i; // refractive index of the material the ray is in
+    float eta_t; // refractive index of the material the refractive ray is in
+    vec3f n; // vector pointing into the material the ray is going into
+    if (cos_i < 0) {
+        // ray hits outside of sphere
+        eta_i = 1.f;
+        eta_t = closest_ball.reflection.refractive_index;
+        n = normal;
+        cos_i = -cos_i; // cos_i needs to be positive
+    } else {
+        // ray hits inside of sphere
+        eta_i = closest_ball.reflection.refractive_index;
+        eta_t = 1.f;
+        n = vec3f_scale(normal, -1.f);
+    }
+
+    /** compute refractive color */
+    vec3f refracted_color;
+    if (closest_ball.reflection.type == REFRACTIVE || closest_ball.reflection.type == REFLECTIVE_REFRACTIVE) {
+        float eta_r = eta_i / eta_t;
+        float discriminant = 1.f - eta_r * eta_r * (1.f - cos_i * cos_i);
+
+        if (discriminant < 0) {
+            // discriminant is negative, total internal refraction
+            return color_intersection;
+        }
+
+        float b = eta_r * cos_i - sqrtf(discriminant);
+        vec3f refraction_dir = vec3f_norm(vec3f_add(vec3f_scale(ray.direction, eta_r), vec3f_scale(n, b)));
+        ray_t refraction = {reflection.start, refraction_dir};
+
+        // recursive call
+        refracted_color = trace_ray(refraction, depth - 1, T_CLOSE, t_max);
+    }
+
+    float kr; // reflected component
+    float kt; // refracted component
+    if (closest_ball.reflection.type == REFLECTIVE_REFRACTIVE) {
+        // use snell's law to compute the reflective and refractive components
+        // sinus of angle of refraction
+        float sin_t = eta_i / eta_t * sqrtf(fmaxf(0.f, 1.f - cos_i * cos_i));
+
+        if (sin_t >= 1.f) {
+            // total internal reflection, only reflection
+            kr = 1.f;
+        } else {
+            // cosinus of angle of refraction
+            float cos_t = sqrtf(fmaxf(0.f, 1.f - sin_t * sin_t));
+            float r_parallel = ((eta_t * cos_i) - (eta_i * cos_t)) / ((eta_t * cos_i) + (eta_i * cos_t));
+            float r_perpendicular = ((eta_i * cos_i) - (eta_t * cos_t)) / ((eta_i * cos_i) + (eta_t * cos_t));
+            kr = (r_parallel * r_parallel + r_perpendicular * r_perpendicular) / 2.f;
+        }
+
+        kt = 1.f - kr;
+    }
+
     switch (closest_ball.reflection.type) {
         case NONE:
-            // no reflection nor refraction, done
-            return color;
-        case REFLECTIVE: {
-            // recursive call
-            vec3f reflected_color = trace_ray(reflection, depth - 1, T_CLOSE, t_max);
-
-            vec3f total_color = vec3f_add(
-                    vec3f_scale(color, 1.f - closest_ball.reflection.fraction.reflectiveness),
+            return color_intersection;
+        case REFLECTIVE:
+            // color is determined by color of intersection and reflection
+            return vec3f_add(
+                    vec3f_scale(color_intersection, 1.f - closest_ball.reflection.fraction.reflectiveness),
                     vec3f_scale(reflected_color, closest_ball.reflection.fraction.reflectiveness)
             );
-
-            return total_color;
-        }
-        case REFRACTIVE: {
-            float cos_i = vec3f_dot(normal, ray.direction); // cosine of angle of incidence
-            float eta_i; // refractive index of the material the ray is in
-            float eta_t; // refractive index of the material the refractive ray is in
-
-            vec3f n; // vector pointing into the material the ray is going into
-            if (cos_i < 0) {
-                // ray hits outside of sphere
-                eta_i = 1.f;
-                eta_t = closest_ball.reflection.refractive_index;
-                cos_i = -cos_i;
-                n = normal;
-            } else {
-                // ray hits inside of sphere
-                eta_i = closest_ball.reflection.refractive_index;
-                eta_t = 1.f;
-                n = vec3f_scale(normal, -1.f);
-            }
-
-            float eta_r = eta_i / eta_t;
-            float discriminant = 1.f - eta_r * eta_r * (1.f - cos_i * cos_i);
-
-            if (discriminant < 0) {
-                // discriminant is negative, total internal refraction
-                return color;
-            }
-
-            float b = eta_r * cos_i - sqrtf(discriminant);
-            vec3f refraction_dir = vec3f_norm(vec3f_add(vec3f_scale(ray.direction, eta_r), vec3f_scale(n, b)));
-            ray_t refraction = {reflection.start, refraction_dir};
-
-            // recursive call
-            vec3f refracted_color = trace_ray(refraction, depth - 1, T_CLOSE, t_max);
-
-            vec3f total_color = vec3f_add(
-                    vec3f_scale(color, 1.f - closest_ball.reflection.fraction.refractiveness),
+        case REFRACTIVE:
+            // color is determined by color of intersection and refraction
+            return vec3f_add(
+                    vec3f_scale(color_intersection, 1.f - closest_ball.reflection.fraction.refractiveness),
                     vec3f_scale(refracted_color, closest_ball.reflection.fraction.refractiveness)
             );
-            return total_color;
-        }
         case REFLECTIVE_REFRACTIVE:
-            // todo reflection and refraction
-            return color;
+            // color is determined by color of reflection and refraction
+            return vec3f_add(
+                    vec3f_scale(reflected_color, kr),
+                    vec3f_scale(refracted_color, kt)
+            );
     }
 }
