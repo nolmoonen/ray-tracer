@@ -39,11 +39,11 @@ bool get_closest_plane(hit_t *reflected, plane_t *plane, ray_t origin, float t_m
 /** returns the color of a ray */
 vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max);
 
-const float T_MAX = FLT_MAX;              // default far clipping plane
-const float T_MIN = 0.f;                  // default near clipping plane
-const float T_CLOSE = 0.005f;             // near clipping plane preventing sphere casting shadows and reflections on self
-const vec3f BACKGROUND = {.1f, .1f, .1f}; // color of the background
-const uint32_t DEPTH = 8;                 // number of iterations for reflections/refractions
+const float T_MAX = FLT_MAX;               // default far clipping plane
+const float T_MIN = 0.f;                   // default near clipping plane
+const float T_CLOSE = 0.005f;              // near clipping plane preventing sphere casting shadows and reflections on self
+const vec3f BACKGROUND_COLOR = BACKGROUND; // color of the background
+const uint32_t DEPTH = 8;                  // number of iterations for reflections/refractions
 const uint32_t RAYS_PER_PIXEL_X = 2;                // number of pixels in horizontal direction
 const uint32_t RAYS_PER_PIXEL_Y = RAYS_PER_PIXEL_X; // number of pixels in vertical direction
 const uint32_t RAYS_PER_PIXEL = RAYS_PER_PIXEL_X * RAYS_PER_PIXEL_Y; // the level of supersampling
@@ -56,6 +56,9 @@ int main()
     const uint32_t K = SIZE_X * RAYS_PER_PIXEL_X; // number of rays in horizontal direction
     const uint32_t M = SIZE_Y * RAYS_PER_PIXEL_Y; // number of rays in vertical direction
     const float THETA = FOV;                      // field of view
+    const vec3f E = EYE;    // eye
+    const vec3f T = TARGET; // target
+    const vec3f W = UP;     // up-vector
 
     /** pre-calculation for camera rays */
     vec3f t = vec3f_sub(T, E);   // look direction
@@ -173,6 +176,23 @@ bool reflect_plane(hit_t *hit, ray_t ray, plane_t plane)
 
     // hit point
     vec3f y = vec3f_add(ray.start, vec3f_scale(ray.direction, t));
+
+    if (plane.type == PLANE_BOUNDED) {
+        // if plane is bounded, perform containment checks
+        vec3f a = vec3f_sub(y, plane.point);
+
+        // scalar projection of a on the first direction
+        float a_n = vec3f_dot(a, vec3f_norm(plane.first));
+        if (a_n < 0 || a_n > vec3f_len(plane.first)) {
+            return false;
+        }
+
+        // scalar projection of a on the second direction
+        float a_m = vec3f_dot(a, vec3f_norm(plane.second));
+        if (a_m < 0 || a_m > vec3f_len(plane.second)) {
+            return false;
+        }
+    }
 
     hit->t = t;
     hit->reflect.start = y;
@@ -294,7 +314,7 @@ vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max)
 
     if (!sphere_intersect && !plane_intersect) {
         // if the ray does not hit an object, use the background color
-        return BACKGROUND;
+        return BACKGROUND_COLOR;
     }
 
     /** properties of the intersected object */
@@ -306,6 +326,23 @@ vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max)
     } else { // (!sphere_intersect && plane_intersect) || (plane_intersect && sphere_hit.t >= plane_hit.t)
         material = closest_plane.material;
         hit = plane_hit;
+
+        // if rendering whitted scene, apply a checkerboard pattern to the plane
+#ifdef WHITTED_SCENE
+        if (hit.reflect.start.x * hit.reflect.start.z > 0) {
+            // components have different sign
+            if (((signed) hit.reflect.start.x + (signed) hit.reflect.start.z) % 2) {
+                vec3f color = YELLOW;
+                material.color = color;
+            }
+        } else {
+            // components have same sign (flip pattern)
+            if (((signed) hit.reflect.start.x + (signed) hit.reflect.start.z + 1) % 2) {
+                vec3f color = YELLOW;
+                material.color = color;
+            }
+        }
+#endif
     }
 
     float intensity = compute_lighting(ray, hit.normal, hit.reflect, material.shininess);

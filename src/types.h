@@ -40,10 +40,17 @@ typedef struct {
     material_t material;
 } sphere_t;
 
+typedef enum {
+    PLANE_UNBOUNDED, PLANE_BOUNDED
+} plane_type_t;
+
 typedef struct {
     /** definition of plane */
-    vec3f point;
-    vec3f normal;
+    plane_type_t type; // whether plane is bounded or unbounded
+    vec3f point;       // point
+    vec3f normal;      // normal
+    vec3f first;       // PLANE_BOUNDED: plane in one direction from point
+    vec3f second;      // PLANE_BOUNDED: plane in other direction from point
     /** properties of plane */
     material_t material;
 } plane_t;
