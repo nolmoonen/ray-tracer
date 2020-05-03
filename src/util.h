@@ -1,10 +1,9 @@
-/*
- * File containing only all types, this allows for the scene definition to be in a different file.
- */
-#ifndef RAY_TRACER_TYPES_H
-#define RAY_TRACER_TYPES_H
+#ifndef RAY_TRACER_UTIL_H
+#define RAY_TRACER_UTIL_H
 
-#include "nm_math.h"
+#include <stdint.h>
+#include <float.h>
+#include "vec3.h"
 
 typedef enum {
     NONE,                 // no transparency, no reflection
@@ -79,4 +78,37 @@ typedef struct {
     } v;
 } light_t;
 
-#endif //RAY_TRACER_TYPES_H
+extern const float T_CLOSE; // near clipping plane preventing sphere casting shadows and reflections on self
+
+/** returns reflected ray. {ray} and {normal} should have been normalized */
+vec3f reflect(vec3f ray, vec3f normal);
+
+/** returns whether {ray} and {sphere} intersect, if so: {hit} contains the information about the intersection */
+bool reflect_sphere(hit_t *hit, ray_t ray, sphere_t sphere);
+
+/** returns whether {ray} and {plane} intersect, if so: {hit} contains the information about the intersection */
+bool reflect_plane(hit_t *hit, ray_t ray, plane_t plane);
+
+/** returns the intensity of a ray at a intersection */
+float compute_lighting(ray_t origin, vec3f normal, ray_t reflected, float shininess);
+
+/**
+ * returns whether {origin} intersects with a sphere in SPHERES, if so:
+ * {sphere} contains the closest sphere, {reflected} contains the ray bouncing off that sphere */
+bool get_closest_sphere(hit_t *reflected, sphere_t *sphere, ray_t origin, float t_min, float t_max);
+
+/**
+ * returns whether {origin} intersects with a plane in PLANES, if so:
+ * {plane} contains the closest plane, {reflected} contains the ray bouncing off that plane */
+bool get_closest_plane(hit_t *reflected, plane_t *plane, ray_t origin, float t_min, float t_max);
+
+/** returns the color of a ray */
+vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max);
+
+/** returns the fraction of light that passes trough a material */
+float get_light_troughput(material_t material);
+
+/** {l} ray towards light */
+float get_shadow_factor(ray_t l, float t_min, float t_max);
+
+#endif //RAY_TRACER_UTIL_H

@@ -1,4 +1,4 @@
-#include "nm_math.h"
+#include "vec3.h"
 
 vec3f vec3f_add(vec3f a, vec3f b)
 {
