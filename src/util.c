@@ -220,22 +220,20 @@ vec3f trace_ray(ray_t ray, uint32_t depth, float t_min, float t_max)
         material = closest_plane.material;
         hit = plane_hit;
 
-        // if rendering whitted scene, apply a checkerboard pattern to the plane
-#ifdef WHITTED_SCENE
-        if (hit.reflect.start.x * hit.reflect.start.z > 0) {
-            // components have different sign
-            if (((signed) hit.reflect.start.x + (signed) hit.reflect.start.z) % 2) {
-                vec3f color = YELLOW;
-                material.color = color;
-            }
-        } else {
-            // components have same sign (flip pattern)
-            if (((signed) hit.reflect.start.x + (signed) hit.reflect.start.z + 1) % 2) {
-                vec3f color = YELLOW;
-                material.color = color;
+        if (closest_plane.checkered_xz) {
+            // if a checker pattern should be applied in x/y-plane
+            if (hit.reflect.start.x * hit.reflect.start.z > 0) {
+                // components have different sign
+                if (((signed) hit.reflect.start.x + (signed) hit.reflect.start.z) % 2) {
+                    material.color = closest_plane.checker_color;
+                }
+            } else {
+                // components have same sign (flip pattern)
+                if (((signed) hit.reflect.start.x + (signed) hit.reflect.start.z + 1) % 2) {
+                    material.color = closest_plane.checker_color;
+                }
             }
         }
-#endif
     }
 
     float intensity = compute_lighting(ray, hit.normal, hit.reflect, material.shininess);

@@ -183,6 +183,95 @@ const plane_t PLANES[] = {
 
 #endif
 
+/** Art scene definition */
+#ifdef ART_SCENE
+
+const uint32_t SIZE_X = 1000;
+const uint32_t SIZE_Y = 1000;
+const float FOV = (float) M_PI / 2.f;
+
+const vec3f EYE = {0.f, 5.f, -40.f};
+const vec3f TARGET = {0.f, -24.f, 0.f};
+const vec3f UP = {0.f, 1.f, 0.f};
+
+const vec3f BACKGROUND = BLACK;
+
+const light_t LIGHTS[] = {
+        {.type=LIGHT_AMBIENT, .intensity=.3f},
+        {.type=LIGHT_POINT, .intensity=.9f, .v.location={0.f, 5.f, -41.f}},
+};
+
+const sphere_t SPHERES[] = {
+        {
+                .center={1.7f, .8f, -22.f}, .radius=.8f,
+                .material={
+                        .color=YELLOW, .shininess=10000.f,
+                        .reflection={.type=REFRACTIVE, .fraction.refractiveness=.9f, .refractive_index=1.5f}
+                }
+        },
+        {
+                .center={1.7f, 1.8f, -31.f}, .radius=1.8f,
+                .material={
+                        .color=BLUE, .shininess=10000.f,
+                        .reflection={.type=REFRACTIVE, .fraction.refractiveness=.9f, .refractive_index=1.5f}
+                }
+        },
+        {
+                .center={2.4f, 1.f, -36.f}, .radius=1.f,
+                .material={
+                        .color=GREEN, .shininess=10000.f,
+                        .reflection={.type=REFRACTIVE, .fraction.refractiveness=.9f, .refractive_index=1.5f}
+                }
+        },
+        {
+                .center={-1.8f, .6f, -35.5f}, .radius=.6f,
+                .material={
+                        .color=RED, .shininess=10000.f,
+                        .reflection={.type=REFRACTIVE, .fraction.refractiveness=.9f, .refractive_index=1.5f}
+                }
+        }
+};
+
+#define DISTANT {5.5f, 0.f, 8.f}
+
+const plane_t PLANES[] = {
+        // x/z-plane
+        {
+                .type=PLANE_UNBOUNDED, .point=DISTANT, .normal={0.f, 1.f, 0.f},
+                .material={
+                        .color=WHITE, .shininess=1.f,
+                        .reflection={.type=NONE}
+                },
+                .checkered_xz=true, .checker_color=BLACK
+        },
+        // roof
+        {
+                .type=PLANE_UNBOUNDED, .point=DISTANT, .normal={0.f, -7.5f, -1.f},
+                .material={
+                        .color=WHITE, .shininess=-1.f,
+                        .reflection={.type=REFLECTIVE, .fraction.reflectiveness=1.f}
+                }
+        },
+        // right wall
+        {
+                .type=PLANE_UNBOUNDED, .point=DISTANT, .normal={-1.f, 0.f, 0.f},
+                .material={
+                        .color=WHITE, .shininess=-1.f,
+                        .reflection={.type=REFLECTIVE, .fraction.reflectiveness=1.f}
+                }
+        },
+        // left wall
+        {
+                .type=PLANE_UNBOUNDED, .point=DISTANT, .normal={5.f, 0.f, -1.f},
+                .material={
+                        .color=WHITE, .shininess=-1.f,
+                        .reflection={.type=REFLECTIVE, .fraction.reflectiveness=1.f}
+                }
+        }
+};
+
+#endif
+
 const uint32_t LIGHTS_SIZE = sizeof(LIGHTS) / sizeof(light_t);
 const uint32_t SPHERES_SIZE = sizeof(SPHERES) / sizeof(sphere_t);
 const uint32_t PLANES_SIZE = sizeof(PLANES) / sizeof(plane_t);

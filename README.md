@@ -11,3 +11,7 @@ An exercise into ray tracing containing: Blinn-Phong shading, shadows, reflectio
 The above image contains three spheres having properties, from left to right: partially reflective, partially refractive,
  fully transparent. The reflective and refractive spheres reflect and refract a constant fraction of light, the 
  transparent sphere uses the Fresnel equation to determine the reflective and refractive fractions.
+ 
+The below image contains three fully reflective planes, a checkerboard plane, and four partially refractive spheres.
+ 
+![art](images/art.png)

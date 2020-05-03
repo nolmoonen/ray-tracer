@@ -13,10 +13,12 @@
 #define VIOLET {.5f, .0f, 1.f}
 #define MAROON {.5f, .0f, 0.f}
 #define YELLOW {1.f, 1.f, 0.f}
+#define GRAY   {7.f, 7.f, 7.f}
 
 /** define exactly one scene */
-#define WHITTED_SCENE
 //#define POOL_SCENE
+#define WHITTED_SCENE
+//#define ART_SCENE
 
 /** scene-specific definitions */
 extern const uint32_t SIZE_X;    // number of pixels in horizontal direction

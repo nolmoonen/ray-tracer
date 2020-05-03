@@ -52,6 +52,8 @@ typedef struct {
     vec3f second;      // PLANE_BOUNDED: plane in other direction from point
     /** properties of plane */
     material_t material;
+    bool checkered_xz;   // whether this plane should have a checkerboard pattern in the x/z-plane
+    vec3f checker_color; // the secondary color of the checkered pattern
 } plane_t;
 
 typedef struct {
