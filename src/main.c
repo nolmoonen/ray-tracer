@@ -15,9 +15,9 @@ typedef struct {
     uint8_t b;
 } color_t;
 
-const float T_MAX = FLT_MAX;               // default far clipping plane
-const float T_MIN = 0.f;                   // default near clipping plane
-const uint32_t DEPTH = 8;                  // number of iterations for reflections/refractions
+const float T_MAX = FLT_MAX; // default far clipping plane
+const float T_MIN = 0.f;     // default near clipping plane
+const uint32_t DEPTH = 8;    // number of iterations for reflections/refractions
 const uint32_t RAYS_PER_PIXEL_X = 2;                // number of pixels in horizontal direction
 const uint32_t RAYS_PER_PIXEL_Y = RAYS_PER_PIXEL_X; // number of pixels in vertical direction
 const uint32_t RAYS_PER_PIXEL = RAYS_PER_PIXEL_X * RAYS_PER_PIXEL_Y; // the level of supersampling
@@ -29,13 +29,13 @@ int main()
     const uint32_t M = SIZE_Y * RAYS_PER_PIXEL_Y; // number of rays in vertical direction
 
     /** pre-calculation for camera rays */
-    vec3f t = vec3f_sub(TARGET, EYE);   // look direction
-    vec3f b = vec3f_cross(UP, t); // perpendicular to up and look
+    vec3f t = vec3f_sub(TARGET, EYE); // look direction
+    vec3f b = vec3f_cross(UP, t);     // perpendicular to up and look
     t = vec3f_norm(t);
     b = vec3f_norm(b);
     vec3f v = vec3f_cross(t, b);
 
-    float gx = tanf(FOV / 2.f);    // (half) viewport size in horizontal dimension
+    float gx = tanf(FOV / 2.f);      // (half) viewport size in horizontal dimension
     float gy = (gx * M) / (float) K; // (half) viewport size in vertical dimension
 
     vec3f p11 = vec3f_add(vec3f_sub(t, vec3f_scale(b, gx)), vec3f_scale(v, gy)); // top left ray

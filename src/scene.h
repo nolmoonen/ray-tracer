@@ -15,8 +15,8 @@
 #define YELLOW {1.f, 1.f, 0.f}
 
 /** define exactly one scene */
-//#define WHITTED_SCENE
-#define POOL_SCENE
+#define WHITTED_SCENE
+//#define POOL_SCENE
 
 /** scene-specific definitions */
 extern const uint32_t SIZE_X;    // number of pixels in horizontal direction
