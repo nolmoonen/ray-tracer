@@ -6,11 +6,6 @@
 
 #include "nm_math.h"
 
-typedef struct {
-    vec3f center;
-    float radius;
-} sphere_t;
-
 typedef enum {
     NONE,                 // no transparency, no reflection
     REFLECTIVE,           // fraction of light is reflected
@@ -32,16 +27,37 @@ typedef struct {
 } reflection_t;
 
 typedef struct {
-    sphere_t sphere;
     vec3f color;
     float shininess; // blinn-phong shininess
     reflection_t reflection;
-} ball_t;
+} material_t;
+
+typedef struct {
+    /** definition of sphere */
+    vec3f center;
+    float radius;
+    /** properties of sphere */
+    material_t material;
+} sphere_t;
+
+typedef struct {
+    /** definition of plane */
+    vec3f point;
+    vec3f normal;
+    /** properties of plane */
+    material_t material;
+} plane_t;
 
 typedef struct {
     vec3f start;
     vec3f direction;
 } ray_t;
+
+typedef struct {
+    vec3f normal;  // normal of object at position of hit
+    ray_t reflect; // reflection invoked by ray hitting
+    float t;       // distance from origin ray to hit
+} hit_t;
 
 typedef enum {
     LIGHT_AMBIENT, LIGHT_POINT, LIGHT_DIRECTIONAL

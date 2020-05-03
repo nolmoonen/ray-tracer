@@ -4,41 +4,143 @@
 #ifndef RAY_TRACER_SCENE_H
 #define RAY_TRACER_SCENE_H
 
-#define POINT_LIGHT_POS {14.f, 9.f, 10.f}
+#define POOL_SCENE // pool scene toggle
+/** Pool scene definition */
+#ifdef POOL_SCENE
+
+#define POINT_LIGHT_POS {5.f, 5.f, 0.f}
+#define TARGET_POS {0.f, 1.f, 0.f}
+
+#define RED    {1.f, 0.f, 0.f}
+#define BLUE   {0.f, 0.f, 1.f}
+#define GREEN  {0.f, 1.f, 0.f}
+#define BLACK  {0.f, 0.f, 0.f}
+#define ORANGE {1.f, .5f, 0.f}
+#define VIOLET {.5f, .0f, 1.f}
+#define MAROON {.5f, .0f, 0.f}
+#define YELLOW {1.f, 1.f, 0.f}
+
+#define WIDTH 1000
+#define HEIGHT 200
+#define FOV (M_PI / 10.f)
+
+const vec3f E = {0.f, 4.f, -40.f}; // eye
+const vec3f T = TARGET_POS;        // target
+const vec3f W = {0.f, 1.f, 0.f};   // up-vector
+
 const light_t LIGHTS[] = {
         {.type=LIGHT_AMBIENT, .intensity=.2f},
-        {.type=LIGHT_POINT, .intensity=.6f, .v.location=POINT_LIGHT_POS},
+        {.type=LIGHT_POINT, .intensity=.9f, .v.location=POINT_LIGHT_POS},
         {.type=LIGHT_DIRECTIONAL, .intensity=.2f, .v.direction={1.f, 4.f, 4.f}}
 };
 
-const ball_t BALLS[] = {
-        // red ball
+#define RADIUS 1.f
+#define RADIUS_DIAG 1.732050808f // sqrtf(3)
+#define SHININESS 1000.f
+#define REFLECTION {.type=REFLECTIVE, .fraction.reflectiveness=.3f}
+
+const sphere_t SPHERES[] = {
+        // yellow (1)
         {
-                .sphere={.center={-9.f, 1.f, 30.f}, .radius=4.f}, .color={1.f, 0.f, 0.f}, .shininess=10.f,
-                .reflection={.type=NONE}
+                .center={0.f, 1.f, 0.f - RADIUS_DIAG * 2.f}, .radius=1.f,
+                .material={.color=YELLOW, .shininess=SHININESS, .reflection=REFLECTION}
         },
-        // green ball
+        // blue (2)
         {
-                .sphere={.center={-3.f, 1.f, 26.f}, .radius=4.f}, .color={0.f, 1.f, 0.f}, .shininess=100.f,
-                .reflection={.type=REFLECTIVE, .fraction.reflectiveness=.2f}
+                .center={0.f - RADIUS, 1.f, 0.f - RADIUS_DIAG}, .radius=1.f,
+                .material={.color=BLUE, .shininess=SHININESS, .reflection=REFLECTION}
         },
-        // blue ball
+        // red (3)
         {
-                .sphere={.center={+3.f, 1.f, 22.f}, .radius=4.f}, .color = {0.f, 0.f, 1.f}, .shininess = 500.f,
-                .reflection={.type=REFRACTIVE, .fraction.refractiveness=.9f, .refractive_index=1.5f}
+                .center={0.f + RADIUS, 1.f, 0.f - RADIUS_DIAG}, .radius=1.f,
+                .material={.color=RED, .shininess=SHININESS, .reflection=REFLECTION}
         },
-        // yellow ball
+        // pink (4)
         {
-                .sphere={.center={+9.f, 1.f, 18.f}, .radius=4.f}, .color = {1.f, 1.f, 0.f}, .shininess = 1000.f,
-                .reflection={.type=REFLECTIVE_REFRACTIVE, .refractive_index=1.5f}
+                .center={0.f - RADIUS * 2.f, 1.f, 0.f}, .radius=1.f,
+                .material={.color=VIOLET, .shininess=SHININESS, .reflection=REFLECTION}
         },
-        // a large ball that serves as a surface
+        // orange (5)
         {
-                .sphere={.center={0.f, -50002.5f, 24.f}, .radius=50000.f}, .color = {.9f, .9f, .9f}, .shininess = 0.f,
-                .reflection={.type=NONE}
+                .center=TARGET_POS, .radius=1.f,
+                .material={.color=ORANGE, .shininess=SHININESS, .reflection=REFLECTION}
         },
-        // DEBUG: render a ball in the location of a light
-//        {.sphere={.c=POINT_LIGHT_POS, .r=1.f}, .color={1.f, 1.f, 1.f}, .shininess=0.f}
+        // green (6)
+        {
+                .center={0.f + RADIUS * 2.f, 1.f, 0.f}, .radius=1.f,
+                .material={.color=GREEN, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // brown (7)
+        {
+                .center={0.f - RADIUS * 3.f, 1.f, 0.f + RADIUS_DIAG}, .radius=1.f,
+                .material={.color=MAROON, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // black (8)
+        {
+                .center={0.f - RADIUS * 1.f, 1.f, 0.f + RADIUS_DIAG}, .radius=1.f,
+                .material={.color=BLACK, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // yellow (9)
+        {
+                .center={0.f + RADIUS * 1.f, 1.f, 0.f + RADIUS_DIAG}, .radius=1.f,
+                .material={.color=YELLOW, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // blue (10)
+        {
+                .center={0.f + RADIUS * 3.f, 1.f, 0.f + RADIUS_DIAG}, .radius=1.f,
+                .material={.color=BLUE, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // red (11)
+        {
+                .center={0.f - RADIUS * 4.f, 1.f, 0.f + RADIUS_DIAG * 2.f}, .radius=1.f,
+                .material={.color=RED, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // pink (12)
+        {
+                .center={0.f - RADIUS * 2.f, 1.f, 0.f + RADIUS_DIAG * 2.f}, .radius=1.f,
+                .material={.color=VIOLET, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // orange (13)
+        {
+                .center={0.f, 1.f, 0.f + RADIUS_DIAG * 2.f}, .radius=1.f,
+                .material={.color=ORANGE, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // green (14)
+        {
+                .center={0.f + RADIUS * 2.f, 1.f, 0.f + RADIUS_DIAG * 2.f}, .radius=1.f,
+                .material={.color=GREEN, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // brown (15)
+        {
+                .center={0.f + RADIUS * 4.f, 1.f, 0.f + RADIUS_DIAG * 2.f}, .radius=1.f,
+                .material={.color=MAROON, .shininess=SHININESS, .reflection=REFLECTION}
+        },
+        // DEBUG: render a sphere in the location of a light
+//        {.center=POINT_LIGHT_POS, .radius=.1f,
+//                .material={
+//                        .color={1.f, 1.f, 1.f}, .shininess=0.f,
+//                        .reflection={.type=NONE}
+//                }
+//        }
 };
+
+const plane_t PLANES[] = {
+        // x/z-plane
+        {
+                .point={0.f, 0.f, 0.f}, .normal={0.f, 1.f, 0.f},
+                .material={
+                        .color={.2f, .6f, .2f}, .shininess=-1.f,
+                        .reflection={.type=NONE}
+                }
+        },
+        {
+                .point={0.f, 0.f, 0.f + RADIUS_DIAG * 2.f + RADIUS}, .normal={0.f, 0.f, -1.f},
+                .material={
+                        .color={.2f, .6f, .2f}, .shininess=-1.f,
+                        .reflection={.type=NONE}
+                }
+        }
+};
+#endif
 
 #endif //RAY_TRACER_SCENE_H
