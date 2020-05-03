@@ -1,6 +1,7 @@
 ![splash](images/splash.png)
 
-An exercise into ray tracing containing: Blinn-Phong shading, shadows, reflections, refractions, and anti-aliasing.
+An exercise into ray tracing containing: Blinn-Phong shading, shadows, reflections, refractions, and anti-aliasing. Shadows take into account objects that let light through, and the ratio of reflected and refracted light of transparent objects is dependent on the view angle.
+
 #### Building
 * Clone [stb](https://github.com/nothings/stb) into directory `external/stb`.
 * Build using CMake.
