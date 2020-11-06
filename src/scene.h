@@ -17,8 +17,9 @@
 
 /** define exactly one scene */
 //#define POOL_SCENE
-#define WHITTED_SCENE
+//#define WHITTED_SCENE
 //#define ART_SCENE
+#define PROFILE_SCENE
 
 /** scene-specific definitions */
 extern const uint32_t SIZE_X;    // number of pixels in horizontal direction

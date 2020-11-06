@@ -272,6 +272,41 @@ const plane_t PLANES[] = {
 
 #endif
 
+/** Profile scene definition */
+#ifdef PROFILE_SCENE
+
+const uint32_t SIZE_X = 500;
+const uint32_t SIZE_Y = 500;
+const float FOV = (float) M_PI / 10.f;
+
+const vec3f EYE = {0.f, 0.f, -8.f};
+const vec3f TARGET = {0.f, 0.f, 0.f};
+const vec3f UP = {0.f, 1.f, 0.f};
+
+const vec3f BACKGROUND = {1.f, 1.f, 1.f};
+
+const light_t LIGHTS[] = {
+        {.type=LIGHT_AMBIENT, .intensity=.6f},
+        {.type=LIGHT_POINT, .intensity=.3f, .v.location={1.f, 1.f, 1.f}},
+        {.type=LIGHT_DIRECTIONAL, .intensity=.1f, .v.direction={1.f, 1.f, 1.f}}
+};
+
+#define SHININESS 2.f
+#define REFLECTION {.type=REFLECTIVE, .fraction.reflectiveness=.05f}
+
+const sphere_t SPHERES[] = {
+        {
+                .center={0.f, 0.f, 0.f}, .radius=1.f,
+                .material={
+                        .color={187.f / 255.f, 209.f / 255.f, 135.f / 255.f},
+                        .shininess=SHININESS, .reflection=REFLECTION}
+        }
+};
+
+const plane_t PLANES[] = {};
+
+#endif
+
 const uint32_t LIGHTS_SIZE = sizeof(LIGHTS) / sizeof(light_t);
 const uint32_t SPHERES_SIZE = sizeof(SPHERES) / sizeof(sphere_t);
 const uint32_t PLANES_SIZE = sizeof(PLANES) / sizeof(plane_t);

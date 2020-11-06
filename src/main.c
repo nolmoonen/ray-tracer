@@ -18,7 +18,7 @@ typedef struct {
 const float T_MAX = FLT_MAX; // default far clipping plane
 const float T_MIN = 0.f;     // default near clipping plane
 const uint32_t DEPTH = 8;    // number of iterations for reflections/refractions
-const uint32_t RAYS_PER_PIXEL_X = 2;                // number of pixels in horizontal direction
+const uint32_t RAYS_PER_PIXEL_X = 16;               // number of pixels in horizontal direction
 const uint32_t RAYS_PER_PIXEL_Y = RAYS_PER_PIXEL_X; // number of pixels in vertical direction
 const uint32_t RAYS_PER_PIXEL = RAYS_PER_PIXEL_X * RAYS_PER_PIXEL_Y; // the level of supersampling
 
